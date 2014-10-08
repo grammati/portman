@@ -4,7 +4,7 @@
     [clojure.string :as string]
     [om.core :as om]
     [sablono.core :refer-macros [html]]
-    [cljs.core.async :as async :refer [<! >! go]])
+    [cljs.core.async :as async :refer [<! >!]])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -14,26 +14,69 @@
   (.getElementById js/document id))
 
 ;; define your app data so that it doesn't get over-written on reload
-(defonce app-data (atom {:message "Hello there"}))
+(defonce app-data (atom {:message "Hello there"
+                         :data []}))
+
+(defn load-data []
+  (.ajax js/jQuery
+         "/slm/webservice/v2.0/artifact"
+         #js {:data     #js {:types "portfolioitem/feature"
+                             :pagesize 100
+                             :start 1
+                             :shallowFetch "ObjectID,Name"
+                             :includePermissions true}
+              :dataType "text"
+              :success  (fn [x]
+                          (let [result (js->clj (.parse js/JSON x))]
+                            (swap! app-data assoc-in [:data] (get-in result ["QueryResult" "Results"]))))
+              :error    (fn [x]
+                          (println "ERROR" x))}))
+
+(defn foo [data]
+  (go (loop [i 0]
+        (when (< i 10)
+          (println "loop " i)
+          (om/transact! data :message (fn [m] (str "Hello #" i)))
+          (<! (async/timeout 1000))
+          (recur (inc i))))))
+
+(defn pi-table [data]
+  (html [:table {:class "table table-condensed"}
+         [:thead
+          [:tr
+           (for [t ["ID" "Name"]]
+             [:th t])]]
+         [:tbody
+          (for [row data]
+            [:tr
+             [:td (row "ObjectID")]
+             [:td (row "Name")]])]]))
 
 (defn app [data owner]
   (reify
     om/IDidMount
     (did-mount [_]
-      (go (loop [i 0]
-            (when (< i 10)
-              (println "loop " i)
-              (om/transact! data :message (fn [m] (str m " " i)))
-              (<! (async/timeout 1000))
-              (recur (inc i))))))
+      (load-data))
     om/IRender
     (render [_]
       (println "Rendering root")
-      (html [:div (:message data)]))))
+      (html [:div
+             [:div (:message data)]
 
-(om/root app
-         app-data
-         {:target (by-id "portman-main")})
+             (pi-table (:data data))
+             
+             [:svg {:width 800 :height 600}
+              [:rect {:width 400 :height 300 :x 50 :y 50 :ry 10 :fill "#822" :style {:border "4px solid black"}}]
+              [:circle {:cx 250 :cy 200 :r 125 :fill "#228"}]
+              [:text {:x 250 :y 210 :text-anchor "middle" :font-size 60 :font-family "helvetica" :fill "white"}
+               "React"]]
+
+             [:span (str (js/Date.))]]))))
+
+(defn render-app []
+  (om/root app
+           app-data
+           {:target (by-id "portman-main")}))
 
 
 
@@ -47,3 +90,6 @@
  :jsload-callback (fn []
                     (println "reloaded JS")
                     ))
+
+
+(.setTimeout js/window (fn [] (render-app)) 10)

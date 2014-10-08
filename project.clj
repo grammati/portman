@@ -6,10 +6,10 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2202"]
-                 [com.facebook/react "0.11.1"]
+                 ;;[com.facebook/react "0.11.1"]
                  [figwheel "0.1.4-SNAPSHOT"]
                  [org.clojure/core.async "0.1.278.0-76b25b-alpha"]
-                 [sablono "0.2.21"]
+                 [sablono "0.2.2"]
                  [om "0.7.1"]]
   
   :plugins [[lein-cljsbuild "1.0.3"]
