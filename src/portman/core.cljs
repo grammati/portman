@@ -32,14 +32,6 @@
               :error    (fn [x]
                           (println "ERROR" x))}))
 
-(defn foo [data]
-  (go (loop [i 0]
-        (when (< i 10)
-          (println "loop " i)
-          (om/transact! data :message (fn [m] (str "Hello #" i)))
-          (<! (async/timeout 1000))
-          (recur (inc i))))))
-
 (defn pi-table [data]
   (html [:table {:class "table table-condensed"}
          [:thead
@@ -61,15 +53,14 @@
     (render [_]
       (println "Rendering root")
       (html [:div
-             [:div (:message data)]
 
              (pi-table (:data data))
              
-             [:svg {:width 800 :height 600}
-              [:rect {:width 400 :height 300 :x 50 :y 50 :ry 10 :fill "#822" :style {:border "4px solid black"}}]
-              [:circle {:cx 250 :cy 200 :r 125 :fill "#228"}]
-              [:text {:x 250 :y 210 :text-anchor "middle" :font-size 60 :font-family "helvetica" :fill "white"}
-               "React"]]
+             [:svg {:width 800 :height 350}
+              [:rect {:width 400 :height 300 :x 50 :y 25 :ry 10 :fill "#822" :style {:border "4px solid black"}}]
+              [:circle {:cx 250 :cy 175 :r 125 :fill "#228"}]
+              [:text {:x 250 :y 200 :text-anchor "middle" :font-size 60 :font-family "helvetica" :fill "white"}
+               "React!"]]
 
              [:span (str (js/Date.))]]))))
 
@@ -83,7 +74,7 @@
 (println "Edits to this text should show up in your developer console.")
 
 (fw/watch-and-reload
- :websocket-url (str "ws://" js/location.host "/portman/figwheel-ws")
+ :websocket-url (str "wss://" js/location.host "/portman/figwheel-ws")
  :url-rewriter  (fn [u]
                   (when u
                     (.replace u js/location.host (str js/location.host "/portman"))))
