@@ -1,116 +1,102 @@
 (ns portman.core
   (:require
-    [figwheel.client :as fw]
-    [clojure.string :as string]
-    [om.core :as om]
-    [sablono.core :refer-macros [html]]
-    [cljs.core.async :as async :refer [<! >!]])
+   [cljs.core.async :as async :refer [<! >!]]
+   [om.core :as om]
+   [om-tools.core ]
+   [om-tools.dom :as dom :include-macros true]
+   [portman.data :as data]
+   [portman.layout :as layout]
+   [portman.table :as table]
+   [portman.svg :as svg]
+   [sablono.core :refer-macros [html]])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
 
+
 (enable-console-print!)
 
-(defn by-id [id]
-  (.getElementById js/document id))
-
-;; define your app data so that it doesn't get over-written on reload
 (defonce app-data (atom {:message "Hello there"
                          :data []}))
 
-(defn load-data []
-  (.ajax js/jQuery
-         "/slm/webservice/v2.0/artifact"
-         #js {:data     #js {:types              "portfolioitem/strategy"
-                             :pagesize           200
-                             :start              1
-                             ;;:shallowFetch       "ObjectID,Name"
-                             :fetch              true
-                             :includePermissions true
-                             }
-              :dataType "text"
-              :success  (fn [x]
-                          (let [result (js->clj (.parse js/JSON x))]
-                            (swap! app-data assoc-in [:data] (get-in result ["QueryResult" "Results"]))))
-              :error    (fn [x]
-                          (println "ERROR" x))}))
+(def drag-handle-col
+  {:render   (fn [_] (html [:span.icon.icon-five-dots]))
+   :td-class (fn [d] (str "row-handle bg-strategy"))})
 
-(defn pi-table [data]
-  (html [:table {:class "table table-condensed"}
-         [:thead
-          [:tr
-           (for [t ["ID" "Name" "LeafStoryCount"]]
-             [:th t])]]
-         [:tbody
-          (for [row data]
-            [:tr
-             [:td (row "FormattedID")]
-             [:td (row "Name")]
-             [:td (row "LeafStoryCount")]])]]))
+(def checkbox-col
+  {:render   (fn [d] [:input {:type "checkbox"}])
+   :td-class "grid-controls"})
 
-(defn thingy [data]
-  (let [d (->> data
-               (map #(get % "LeafStoryCount"))
-               (filter #(> % 0))
-               sort
-               reverse)]
-   (pie d)))
+(def gear-menu-col
+  {:render   (fn [d] [:span.icon.icon-gear])
+   :td-class "grid-controls"})
 
-(defn- zip [a b]
-  (map vector a b))
+(defn expandable [{:keys [render] :as col}]
+  (assoc col
+    :render (fn [d]
+              (html
+               [:span
+                [:a {:on-click (fn [e] (println e)) :href "javascript:;"}
+                 [:span.icon.icon-right-full {:style {:margin "0 10"}}]]
+                (render d)]))
+    :td-class "expand"))
 
-(defn pie [data]
-  (let [total      (float (reduce + data))
-        ptots      (reductions + (cons 0 data))
-        radius     150
-        center     "200,200"
-        top        "200,50"
-        rand-color #(str "#" (rand-int 9) (rand-int 9) (rand-int 9))]
-    [:svg {:width 400 :height 400}
-     [:g {:stoke-width 2}
-      (for [[val ptot] (zip data ptots)]
-        (let [angle (* 2.0 Math/PI (/ val total))
-              rot   (* 360.0 (/ ptot total))
-              end-x (+ 200 (* (Math/sin angle) radius))
-              end-y (- 200 (* (Math/cos angle) radius))
-              _ (println total angle end-x end-y (/ val total))]
-          [:path {:d (str "M " center " L " top " A 150 150 0 " (if (> rot 180) 0 1) " 1 " end-x " " end-y " z")
-                  :transform (str "rotate(" rot "," center ") "
-                                  "rotate(" (* 180 (/ val total)) "," center ")"
-                                  "translate(0,0) "
-                                  "rotate(" (* -180 (/ val total)) "," center ")"
-                                  )
-                  :style {:stroke "black" :stroke-width 0 :fill (rand-color)}}]))]]))
+(def formatted-id-col
+  {:header "ID"
+   :render (fn [d]
+             (let []
+               (html
+                [:a.id {:href (d "_ref")}
+                 [:span.icon.icon-portfolio.margin-right-half]
+                 (d "FormattedID")])))})
+
+(def portfolio-item-table
+  (table/define-table
+    {:cols [drag-handle-col
+            checkbox-col
+            gear-menu-col
+            (expandable formatted-id-col)
+            {:header "Name"
+             :render (fn [d] (d "Name"))}
+            {:header "Leaf Story Count"
+             :render (fn [d] (d "LeafStoryCount"))}]}))
+
+(defn pi-table [data owner]
+  (reify
+    om/IRender
+    (render [_]
+      (dom/table
+       {:class "table table-condensed"}
+       (dom/thead
+        (dom/tr
+         (for [t ["ID" "Name" "LeafStoryCount"]]
+           (dom/th t))))
+       (dom/tbody
+        (for [row data]
+          (dom/tr
+           (dom/td (row "FormattedID"))
+           (dom/td (row "Name"))
+           (dom/td (row "LeafStoryCount")))))))))
+
 
 (defn app [data owner]
   (reify
     om/IDidMount
     (did-mount [_]
-      (load-data))
+      (go
+        (let [pis (<! (data/load-pis))]
+          (swap! app-data assoc-in [:data] pis))))
     om/IRender
     (render [_]
-      (println "Rendering root")
-      (html [:div
-             (thingy (:data data))
-             (pi-table (:data data))
-             (thingy (:data data))]))))
+      (layout/container-fluid
+       (layout/row
+        (layout/col 9 (om/build portfolio-item-table (:data data)))
+        (layout/col 3 (om/build svg/hot-pie (:data data))))
+       ;;(thingy (:data data))
+       ))))
 
 (defn render-app []
   (om/root app
            app-data
-           {:target (by-id "portman-main")}))
+           {:target (.getElementById js/document "portman-main")}))
 
-
-
-(println "Edits to this text should show up in your developer console.")
-
-(fw/watch-and-reload
- :websocket-url (str "wss://" js/location.host "/portman/figwheel-ws")
- :url-rewriter  (fn [u]
-                  (when u
-                    (.replace u js/location.host (str js/location.host "/portman"))))
- :jsload-callback (fn []
-                    (println "reloaded JS")
-                    ))
-
-
-(.setTimeout js/window (fn [] (render-app)) 10)
+(render-app)

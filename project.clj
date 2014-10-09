@@ -9,17 +9,22 @@
                  ;;[com.facebook/react "0.11.1"]
                  [com.rallydev/figwheel "0.1.4-SNAPSHOT"]
                  [org.clojure/core.async "0.1.278.0-76b25b-alpha"]
+                 [om "0.7.1"]
                  [sablono "0.2.2"]
-                 [om "0.7.1"]]
+                 [prismatic/om-tools "0.3.2"]
+                 [net.drib/strokes "0.5.1"]]
   
   :plugins [[lein-cljsbuild "1.0.3"]
             [com.rallydev/lein-figwheel "0.1.4-SNAPSHOT"]]
 
   :source-paths ["src"]
+
+  :profiles
+  {:dev {:source-paths ["dev"]}}
   
   :cljsbuild {
     :builds [{:id "dev"
-              :source-paths ["src"]
+              :source-paths ["src" "dev"]
               :compiler {:output-to "resources/public/js/compiled/portman.js"
                          :output-dir "resources/public/js/compiled/out"
                          :optimizations :none
