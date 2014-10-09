@@ -20,11 +20,13 @@
 (defn load-data []
   (.ajax js/jQuery
          "/slm/webservice/v2.0/artifact"
-         #js {:data     #js {:types "portfolioitem/feature"
-                             :pagesize 100
-                             :start 1
-                             :shallowFetch "ObjectID,Name"
-                             :includePermissions true}
+         #js {:data     #js {:types              "portfolioitem/strategy"
+                             :pagesize           200
+                             :start              1
+                             ;;:shallowFetch       "ObjectID,Name"
+                             :fetch              true
+                             :includePermissions true
+                             }
               :dataType "text"
               :success  (fn [x]
                           (let [result (js->clj (.parse js/JSON x))]
@@ -36,13 +38,48 @@
   (html [:table {:class "table table-condensed"}
          [:thead
           [:tr
-           (for [t ["ID" "Name"]]
+           (for [t ["ID" "Name" "LeafStoryCount"]]
              [:th t])]]
          [:tbody
           (for [row data]
             [:tr
-             [:td (row "ObjectID")]
-             [:td (row "Name")]])]]))
+             [:td (row "FormattedID")]
+             [:td (row "Name")]
+             [:td (row "LeafStoryCount")]])]]))
+
+(defn thingy [data]
+  (let [d (->> data
+               (map #(get % "LeafStoryCount"))
+               (filter #(> % 0))
+               sort
+               reverse)]
+   (pie d)))
+
+(defn- zip [a b]
+  (map vector a b))
+
+(defn pie [data]
+  (let [total      (float (reduce + data))
+        ptots      (reductions + (cons 0 data))
+        radius     150
+        center     "200,200"
+        top        "200,50"
+        rand-color #(str "#" (rand-int 9) (rand-int 9) (rand-int 9))]
+    [:svg {:width 400 :height 400}
+     [:g {:stoke-width 2}
+      (for [[val ptot] (zip data ptots)]
+        (let [angle (* 2.0 Math/PI (/ val total))
+              rot   (* 360.0 (/ ptot total))
+              end-x (+ 200 (* (Math/sin angle) radius))
+              end-y (- 200 (* (Math/cos angle) radius))
+              _ (println total angle end-x end-y (/ val total))]
+          [:path {:d (str "M " center " L " top " A 150 150 0 " (if (> rot 180) 0 1) " 1 " end-x " " end-y " z")
+                  :transform (str "rotate(" rot "," center ") "
+                                  "rotate(" (* 180 (/ val total)) "," center ")"
+                                  "translate(0,0) "
+                                  "rotate(" (* -180 (/ val total)) "," center ")"
+                                  )
+                  :style {:stroke "black" :stroke-width 0 :fill (rand-color)}}]))]]))
 
 (defn app [data owner]
   (reify
@@ -53,16 +90,9 @@
     (render [_]
       (println "Rendering root")
       (html [:div
-
+             (thingy (:data data))
              (pi-table (:data data))
-             
-             [:svg {:width 800 :height 350}
-              [:rect {:width 400 :height 300 :x 50 :y 25 :ry 10 :fill "#822" :style {:border "4px solid black"}}]
-              [:circle {:cx 250 :cy 175 :r 125 :fill "#228"}]
-              [:text {:x 250 :y 200 :text-anchor "middle" :font-size 60 :font-family "helvetica" :fill "white"}
-               "React!"]]
-
-             [:span (str (js/Date.))]]))))
+             (thingy (:data data))]))))
 
 (defn render-app []
   (om/root app
