@@ -10,7 +10,6 @@
                   (when u
                     (.replace u js/location.host (str js/location.host "/portman"))))
  :jsload-callback (fn []
-                    (println "reloaded JS")
                     (portman.core/render-app)
                     ))
 

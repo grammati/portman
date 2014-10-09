@@ -40,12 +40,11 @@
                     (let [angle (* 2.0 Math/PI (/ val total))
                           rot   (* 360.0 (/ ptot total))
                           end-x (+ 200 (* (Math/sin angle) radius))
-                          end-y (- 200 (* (Math/cos angle) radius))
-                          _ (println total angle end-x end-y (/ val total))]
+                          end-y (- 200 (* (Math/cos angle) radius))]
                       (dom/path {:d (str "M " center " L " top " A 150 150 0 " (if (> rot 180) 0 1) " 1 " end-x " " end-y " z")
                                  :transform (str "rotate(" rot "," center ") "
                                                  "rotate(" (* 180 (/ val total)) "," center ")"
-                                                 "translate(0,-2) "
+                                                 "translate(0,-0) "
                                                  "rotate(" (* -180 (/ val total)) "," center ")"
                                                  )
                                  :style {:stroke "black" :stroke-width 0 :fill (rand-color)}})))))))))

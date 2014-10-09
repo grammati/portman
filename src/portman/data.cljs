@@ -1,5 +1,6 @@
 (ns portman.data
   (:require
+   [om.core :as om]
    [cljs.core.async :as async :refer [<! >!]])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -34,3 +35,12 @@
                   :includePermissions true
                   }}))
 
+(defn load-children! [d]
+  (om/update! d [:loading-children?] true)
+  (go
+    (let [children (<! (ajax (get-in @d ["Children" "_ref"]) {}))]
+      (.setTimeout js/window
+                  (fn []
+                    (om/update! d [:children] children)
+                    (om/update! d [:loading-children?] nil))
+                  1000))))

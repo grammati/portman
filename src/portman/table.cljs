@@ -5,6 +5,12 @@
    [sablono.core :refer-macros [html]]))
 
 
+(defn loading-row [config]
+  (let [colspan (count (:cols config))]
+    (html [:tr.bd-grid-child
+           [:td.text-center {:col-span colspan}
+            "Loading..."]])))
+
 (defn define-table [config]
   (let [cell-components
         (for [{:keys [render td-class]} (:cols config)
@@ -24,9 +30,19 @@
             om/IRender
             (render [_]
               (html
-               [:tr
-                (for [comp cell-components]
-                  (om/build comp row-data))]))))]
+               [:tbody
+                [:tr
+                 (for [comp cell-components]
+                   (om/build comp row-data))]
+                (cond
+                 (:loading-children? row-data)
+                 (loading-row config)
+
+                 (:children row-data)
+                 (for [child (:children row-data)]
+                   [:tr {:class "bg-grid-child"}
+                    (for [comp cell-components]
+                      (om/build comp (assoc child :depth (inc (:depth row-data 0)))))]))]))))]
     
     (fn [data owner]
       (reify
@@ -38,7 +54,6 @@
              [:tr
               (for [col (:cols config)]
                 [:th (:header col)])]]
-            [:tbody
-             (om/build-all row-component data)]]))))))
+            (om/build-all row-component data {:key "ObjectID"})]))))))
 
 

@@ -35,28 +35,45 @@
     :render (fn [d]
               (html
                [:span
-                [:a {:on-click (fn [e] (println e)) :href "javascript:;"}
-                 [:span.icon.icon-right-full {:style {:margin "0 10"}}]]
+                [:a {:on-click (fn [e]
+                                 (data/load-children! d))
+                     :href     "javascript:;"}
+                 [:span.icon {:style {:margin "0 10"}
+                              :class (if (or (:children d) (:loading-children? d))
+                                       "icon-down-full"
+                                       "icon-right-full")}]]
                 (render d)]))
-    :td-class "expand"))
+    :td-class (fn [d]
+                (str ((:td-class col) d) " expand"))))
 
 (def formatted-id-col
-  {:header "ID"
-   :render (fn [d]
-             (let []
-               (html
-                [:a.id {:href (d "_ref")}
-                 [:span.icon.icon-portfolio.margin-right-half]
-                 (d "FormattedID")])))})
+  {:header   "ID"
+   :render   (fn [d]
+               (let []
+                 (html
+                  [:a.id {:href (d "_ref")}
+                   [:span.icon.icon-portfolio.margin-right-half]
+                   (d "FormattedID")])))
+   :td-class (fn [d]
+               (if (pos? (:depth d))
+                 "padding-left-double"
+                 ""))})
 
 (def portfolio-item-table
   (table/define-table
-    {:cols [drag-handle-col
+    {:tr-class (fn [d]
+                 (println "tr-class" (:depth d))
+                 (if (pos? (:depth d))
+                   "bg-grid-child"
+                   ""))
+     :cols [drag-handle-col
             checkbox-col
             gear-menu-col
             (expandable formatted-id-col)
             {:header "Name"
              :render (fn [d] (d "Name"))}
+            {:header "Child Count"
+             :render (fn [d] (get-in d ["Children" "Count"]))}
             {:header "Leaf Story Count"
              :render (fn [d] (d "LeafStoryCount"))}]}))
 
