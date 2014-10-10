@@ -30,19 +30,30 @@
             om/IRender
             (render [_]
               (html
-               [:tbody
-                [:tr
-                 (for [comp cell-components]
-                   (om/build comp row-data))]
-                (cond
-                 (:loading-children? row-data)
-                 (loading-row config)
+               [:tr
+                (for [comp cell-components]
+                  (om/build comp row-data))]))))
 
-                 (:children row-data)
-                 (for [child (:children row-data)]
-                   [:tr {:class "bg-grid-child"}
-                    (for [comp cell-components]
-                      (om/build comp (assoc child :depth (inc (:depth row-data 0)))))]))]))))]
+        build-rows
+        (fn build-rows [row-data depth]
+          (cons
+           (om/build row-component (assoc row-data :_depth depth))
+           (if (:loading-children? row-data)
+             [(loading-row config)]
+             (mapcat #(build-rows % (inc depth)) (:children row-data)))))
+        
+        ;; Component for a group of rows, including a top-level row
+        ;; and, optionally, all its descendant rows (children,
+        ;; grandchildren, etc.)
+        top-level-row-component
+        (fn [row-data owner]
+          (reify
+            om/IRender
+            (render [_]
+              (let []
+                (html
+                 [:tbody
+                  (build-rows row-data 0)])))))]
     
     (fn [data owner]
       (reify
@@ -54,6 +65,6 @@
              [:tr
               (for [col (:cols config)]
                 [:th (:header col)])]]
-            (om/build-all row-component data {:key "ObjectID"})]))))))
+            (om/build-all top-level-row-component data {:key "ObjectID"})]))))))
 
 

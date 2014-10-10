@@ -18,9 +18,13 @@
 (defonce app-data (atom {:message "Hello there"
                          :data []}))
 
+(defn- bg-class [d]
+  (if-let [type (d "_type")]
+    (-> type (.split "/") second (or "") .toLowerCase)))
+
 (def drag-handle-col
   {:render   (fn [_] (html [:span.icon.icon-five-dots]))
-   :td-class (fn [d] (str "row-handle bg-strategy"))})
+   :td-class (fn [d] (str "row-handle " (bg-class d)))})
 
 (def checkbox-col
   {:render   (fn [d] [:input {:type "checkbox"}])
@@ -34,17 +38,18 @@
   (assoc col
     :render (fn [d]
               (html
-               [:span
+               [:span {:style {:margin-left (* 10 (:_depth d 0))}}
                 [:a {:on-click (fn [e]
                                  (data/load-children! d))
                      :href     "javascript:;"}
                  [:span.icon {:style {:margin "0 10"}
-                              :class (if (or (:children d) (:loading-children? d))
-                                       "icon-down-full"
-                                       "icon-right-full")}]]
+                              :class (if (pos? (get (data/get-children d) "Count"))
+                                       (if (or (:children d) (:loading-children? d))
+                                         "icon-down-full"
+                                         "icon-right-full"))}]]
                 (render d)]))
     :td-class (fn [d]
-                (str ((:td-class col) d) " expand"))))
+                (str ((:td-class col (constantly "")) d) " expand"))))
 
 (def formatted-id-col
   {:header   "ID"
@@ -53,27 +58,18 @@
                  (html
                   [:a.id {:href (d "_ref")}
                    [:span.icon.icon-portfolio.margin-right-half]
-                   (d "FormattedID")])))
-   :td-class (fn [d]
-               (if (pos? (:depth d))
-                 "padding-left-double"
-                 ""))})
+                   (d "FormattedID")])))})
 
 (def portfolio-item-table
   (table/define-table
-    {:tr-class (fn [d]
-                 (println "tr-class" (:depth d))
-                 (if (pos? (:depth d))
-                   "bg-grid-child"
-                   ""))
-     :cols [drag-handle-col
+    {:cols [drag-handle-col
             checkbox-col
             gear-menu-col
             (expandable formatted-id-col)
             {:header "Name"
              :render (fn [d] (d "Name"))}
             {:header "Child Count"
-             :render (fn [d] (get-in d ["Children" "Count"]))}
+             :render (fn [d] (get (data/get-children d) "Count"))}
             {:header "Leaf Story Count"
              :render (fn [d] (d "LeafStoryCount"))}]}))
 
@@ -100,14 +96,15 @@
     om/IDidMount
     (did-mount [_]
       (go
-        (let [pis (<! (data/load-pis))]
-          (swap! app-data assoc-in [:data] pis))))
+        (let [strategies (<! (data/load-pis))
+              strategies (vec (sort-by #(- (get % "LeafStoryCount" 0)) strategies))]
+          (swap! app-data assoc-in [:data] strategies))))
     om/IRender
     (render [_]
       (layout/container-fluid
        (layout/row
-        (layout/col 9 (om/build portfolio-item-table (:data data)))
-        (layout/col 3 (om/build svg/hot-pie (:data data))))
+        (layout/col 8 (om/build portfolio-item-table (:data data)))
+        (layout/col 4 (om/build svg/hot-pie (:data data))))
        ;;(thingy (:data data))
        ))))
 

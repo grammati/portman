@@ -35,10 +35,15 @@
                   :includePermissions true
                   }}))
 
+(defn get-children [thing]
+  (or (get thing "Children")
+      (get thing "UserStories")))
+
 (defn load-children! [d]
   (om/update! d [:loading-children?] true)
   (go
-    (let [children (<! (ajax (get-in @d ["Children" "_ref"]) {}))]
+    (let [children (<! (ajax (get (get-children @d) "_ref") {}))
+          children (vec (sort-by #(- (get % "LeafStoryCount" 0)) children))]
       (.setTimeout js/window
                   (fn []
                     (om/update! d [:children] children)
