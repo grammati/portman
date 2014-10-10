@@ -20,7 +20,7 @@
 
 (defn- bg-class [d]
   (if-let [type (d "_type")]
-    (-> type (.split "/") second (or "") .toLowerCase)))
+    (str "bg-" (-> type (.split "/") second (or "") .toLowerCase))))
 
 (def drag-handle-col
   {:render   (fn [_] (html [:span.icon.icon-five-dots]))

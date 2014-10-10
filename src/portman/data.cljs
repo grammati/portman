@@ -44,8 +44,5 @@
   (go
     (let [children (<! (ajax (get (get-children @d) "_ref") {}))
           children (vec (sort-by #(- (get % "LeafStoryCount" 0)) children))]
-      (.setTimeout js/window
-                  (fn []
-                    (om/update! d [:children] children)
-                    (om/update! d [:loading-children?] nil))
-                  1000))))
+      (om/update! d [:children] children)
+      (om/update! d [:loading-children?] nil))))
