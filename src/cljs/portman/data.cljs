@@ -1,6 +1,5 @@
 (ns portman.data
   (:require
-   [om.core :as om]
    [cljs.core.async :as async :refer [<! >!]])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -40,9 +39,9 @@
       (get thing "UserStories")))
 
 (defn load-children! [d]
-  (om/update! d [:loading-children?] true)
+  (swap! d assoc :loading-children? true)
   (go
     (let [children (<! (ajax (get (get-children @d) "_ref") {}))
           children (vec (sort-by #(- (get % "LeafStoryCount" 0)) children))]
-      (om/update! d [:children] children)
-      (om/update! d [:loading-children?] nil))))
+      (swap! d assoc :children children)
+      (swap! d assoc :loading-children? nil))))

@@ -1,1 +1,13 @@
-/resources/public/js/compiled
+/target
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+/resources/public/js
+/out
+/.repl
+*.log
