@@ -19,8 +19,7 @@
                  [prone "0.8.1"]
                  [compojure "1.3.2"]
                  [selmer "0.8.2"]
-                 [environ "1.0.0"]
-                 [secretary "1.2.2"]]
+                 [environ "1.0.0"]]
 
   :plugins [[lein-cljsbuild "1.0.4"]
             [lein-environ "1.0.0"]
@@ -42,7 +41,7 @@
   {:assets
    {"resources/public/css/site.min.css" "resources/public/css/site.css"}}
 
-  :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
+  :cljsbuild {:builds {:app {:source-paths ["src/cljs" "lib"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
                                         :asset-path   "js/out"
@@ -75,7 +74,7 @@
                    :env {:dev? true}
 
                    :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
-                                              :compiler {   :main "portman.dev"
+                                              :compiler {:main "portman.dev"
                                                          :source-map true}}
                                         :test {:source-paths ["src/cljs"  "test/cljs"]
                                                :compiler {:output-to "target/test.js"

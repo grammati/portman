@@ -36,4 +36,4 @@
 (deftest test-home
   (with-mounted-component (rc/home-page)
     (fn [c div]
-      (is (found-in #"Welcome to" div)))))
+      (is (found-in #"Welcome XX" div)))))
