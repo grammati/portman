@@ -2,7 +2,8 @@
   (:use portman.handler
         portman.dev
         ring.server.standalone
-        [ring.middleware file-info file]))
+        [ring.middleware file-info file])
+  (require [clojure.core.async :as async :refer [go go-loop]]))
 
 (defonce server (atom nil))
 
@@ -32,3 +33,17 @@
 (defn stop-server []
   (.stop @server)
   (reset! server nil))
+
+
+(defmacro foo []
+  `(let [x# 23]
+     (go-loop [i# 10]
+       (when (pos? i#)
+         x#
+         (recur (dec i#))))))
+
+(comment
+
+(foo)
+  
+)

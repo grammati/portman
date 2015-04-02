@@ -1,3 +1,20 @@
 .selected {
   background-color: #ddd;
 }
+
+
+/* React CSSTransitionGroup stuff */
+.foo-enter {
+  opacity: 0.01;
+  transition: opacity 1.0s;
+ }
+.foo-enter.foo-enter-active {
+  opacity: 1;
+}
+.foo-leave {
+  opacity: 1;
+  transition: opacity 1.0s;
+}
+.foo-leave.foo-leave-active {
+  opacity: 0.01;
+}
