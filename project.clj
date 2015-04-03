@@ -67,9 +67,10 @@
                                 (pjstadig.humane-test-output/activate!)]
 
                    :figwheel {:http-server-root "public"
-                              :server-port 3449
-                              :css-dirs ["resources/public/css"]
-                              :ring-handler portman.handler/app}
+                              :server-port      3449
+                              :css-dirs         ["resources/public/css"]
+                              :ring-handler     portman.handler/app
+                              }
 
                    :env {:dev? true}
 

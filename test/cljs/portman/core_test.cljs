@@ -1,7 +1,6 @@
 (ns portman.core-test
   (:require [cemerick.cljs.test :refer-macros [is are deftest testing use-fixtures done]]
-            [reagent.core :as reagent :refer [atom]]
-            [portman.core :as rc]))
+            [reagent.core :as reagent]))
 
 
 (def isClient (not (nil? (try (.-document js/window)
@@ -34,6 +33,6 @@
 
 
 (deftest test-home
-  (with-mounted-component (rc/home-page)
+  (with-mounted-component [:div "Fixme"]
     (fn [c div]
       (is (found-in #"Welcome XX" div)))))

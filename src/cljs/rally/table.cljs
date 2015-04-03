@@ -1,5 +1,7 @@
 (ns rally.table
-  (:require [reagent.core :as reagent]))
+  (:require [reagent.core :as reagent]
+            [rally.events :as events])
+  (:require-macros [rally.reagent-utils :refer [for! cur-for]]))
 
 
 (defn loading-row [config]
@@ -56,4 +58,42 @@
        (for [item data]
          [top-level-row-component item])])))
 
+
+
+(defn- indexed [col]
+  (map-indexed vector col))
+
+(defn table [config data]
+  (let [selected (reagent/atom (first @data))]
+    (events/subscribe :table/select
+                      (fn [item]
+                        (reset! selected item)))
+    (fn [config data]
+      (let [config @config
+            keyfn  (or (:keyfn config) :key)
+            cols   (->> config
+                        :cols
+                        (map-indexed vector)
+                        (map (fn [[i item]] (assoc item :index i)))
+                        vec)]
+        [:table.table.table-condensed
+         {:tab-index 1
+          :on-key-down (fn [evt]
+                         (.log js/console (.-keyCode evt)))}
+         [:thead
+          [:tr
+           (for [col cols]
+             ^{:key (:index col)}
+             [:th (:header col)])]]
+         [:tbody
+          (cur-for [$item data]
+            ^{:key (keyfn @$item)}
+            [:tr (merge
+                  {:tab-index 1}
+                  (if (identical? @selected @$item)
+                    {:class "selected"}
+                    {:on-click #(events/publish :table/select @$item)}))
+             (for! [col cols]
+               ^{:key (:index col)}
+               [:td ((:render col) $item)])])]]))))
 

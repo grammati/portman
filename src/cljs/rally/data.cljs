@@ -40,10 +40,13 @@
   (or (get thing "Children")
       (get thing "UserStories")))
 
-(defn load-children! [d]
-  (swap! d assoc :loading-children? true)
-  (go
-    (let [children (<! (ajax (get (get-children @d) "_ref") {}))
-          children (vec (sort-by #(- (get % "LeafStoryCount" 0)) children))]
-      (swap! d assoc :children children)
-      (swap! d assoc :loading-children? nil))))
+(defn load-children! [$item]
+  (if (:loading-children? @$item)
+    (.log js/console "already loading")
+    (do
+      (swap! $item assoc :loading-children? true)
+      (go
+        (let [children (<! (ajax (get (get-children @$item) "_ref") {}))
+              children (vec (sort-by #(- (get % "LeafStoryCount" 0)) children))]
+          (swap! $item assoc :children children)
+          (swap! $item assoc :loading-children? nil))))))

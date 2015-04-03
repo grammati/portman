@@ -1,4 +1,4 @@
-(ns portman.utils)
+(ns rally.reagent-utils)
 
 (defmacro for! [& body]
   `(doall (for ~@body)))

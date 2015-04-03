@@ -1,47 +1,80 @@
-(ns rally.svg)
+(ns rally.svg
+  (:require [clojure.string :as string]
+            [reagent.core :as reagent])
+  (:require-macros [rally.reagent-utils :refer [for! cur-for]]))
 
 
-(defn hot-pie [data]
-  (let [data       (->> data
-                        (map #(get % "LeafStoryCount"))
-                        (filter #(> % 0))
-                        sort
-                        reverse)
-        total      (float (reduce + data))
-        ptots      (reductions + (cons 0 data))
-        radius     150
-        center     "200,200"
-        top        "200,50"
-        rand-color #(str "#" (rand-int 9) (rand-int 9) (rand-int 9))]
-    [:svg {:width 400 :height 400}
-     [:g
-      (for [[val ptot] (map vector data ptots)]
-        (let [angle (* 2.0 Math/PI (/ val total))
-              rot   (* 360.0 (/ ptot total))
-              end-x (+ 200 (* (Math/sin angle) radius))
-              end-y (- 200 (* (Math/cos angle) radius))]
-          [:path {:d (str "M " center " L " top " A 150 150 0 " (if (> rot 180) 0 1) " 1 " end-x " " end-y " z")
-                  :transform (str "rotate(" rot "," center ") "
-                                  "rotate(" (* 180 (/ val total)) "," center ")"
-                                  "translate(0,-0) "
-                                  "rotate(" (* -180 (/ val total)) "," center ")"
-                                  )
-                  :style {:stroke "black" :stroke-width 0 :fill (rand-color)}}]))]]))
+(defn deg->rad [deg]
+  (/ (* Math/PI deg) 180))
+
+(defn rad->deg [rad]
+  (* 180 (/ rad Math/PI)))
+
+(defn pt-on-circle
+  "Return the point on the perimeter of the circle centered
+  at [cx,cy], with radius r, that is `angle` degrees clockwise from
+  center-top."
+  [[cx cy] r angle]
+  (let [rads (deg->rad angle)]
+    [(+ cx (* r (Math/sin rads)))
+     (- cy (* r (Math/cos rads)))]))
+
+(defn arc-path
+  "Calculate and return the path of a circular arc."
+  [[cx cy :as c] ri ro angle start-angle]
+  (let [a0 start-angle
+        a1 (+ start-angle angle)
+        [x0 y0] (pt-on-circle c ro a0)
+        [x1 y1] (pt-on-circle c ro a1)
+        [x2 y2] (pt-on-circle c ri a1)
+        [x3 y3] (pt-on-circle c ri a0)]
+    (string/join
+     " "
+     ["M" x0 y0
+      "A" ro ro 0 (if (> angle 180) 1 0) 1 x1 y1
+      "L" x2 y2
+      "A" ri ri 0 (if (> angle 180) 1 0) 0 x3 y3
+      "Z"] )))
 
 
+(defn pie [config-cur data]
+  (when-not (:depth @config-cur)
+    (.log js/console "pie" data))
+  [:g
+   (let [config      @config-cur
+         [X Y]       (:center config)
+         inner-r     (:inner-r config 0)
+         ring-widths (let [w (:ring-widths config 100)]
+                       (if (number? w) (repeat w) (concat [nil] w (repeat (last w)))))
+         depth       (:depth config 1)
+         outer-r     (+ inner-r (nth ring-widths depth))
+         full-angle  (:full-angle config 360)
+         start-angle (atom (:start-angle config 0))
+         size-fn     (or (:size-fn config) :size)
+         key-fn      (or (:key-fn config) :key)
+         children-fn (or (:children-fn config) :children)
+         total       (reduce + (map size-fn @data))
+         palette     (-> js/d3 .-scale .category20b)]
+     (cur-for [item data]
+       (let [key   (key-fn @item)
+             size  (max (size-fn @item) 1)
+             angle (-> size (/ total) (* full-angle))
+             path  (arc-path [X Y] inner-r outer-r angle @start-angle)
+             children (when-let [ch (children-fn @item)]
+                        [pie (atom
+                              (merge config
+                                     {:full-angle  angle
+                                      :inner-r     outer-r
+                                      :depth       (inc depth)
+                                      :start-angle @start-angle}))
+                         (reagent/atom ch)])]
+         (swap! start-angle + angle)
+         (palette (str "junk" key))    ; skip some colors
+         ^{:key key}
+         [:g [:path {:d     path
+                     :style {:stroke       "#fff"
+                             :fill         (palette key)
+                             :stroke-width 1
+                             :cursor       "hand"}}]
+          children])))])
 
-(comment
-  {:component-did-mount
-   (fn [this]
-     (-> d3
-         (.select (reagent/dom-node this))
-         (.append "defs")
-         (.append "clipPath")
-         (.attr "id" "foobar")
-         (.append "circle")
-         (.attr "cx" 200)
-         (.attr "cy" 200)
-         (.attr "r" 150))
-     (-> d3
-         (.select (.get (js/jQuery "g" (reagent/dom-node this)) 0))
-         (.attr "clip-path" "url(#foobar)")))})
