@@ -34,16 +34,3 @@
   (.stop @server)
   (reset! server nil))
 
-
-(defmacro foo []
-  `(let [x# 23]
-     (go-loop [i# 10]
-       (when (pos? i#)
-         x#
-         (recur (dec i#))))))
-
-(comment
-
-(foo)
-  
-)

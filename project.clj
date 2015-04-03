@@ -7,19 +7,21 @@
   :source-paths ["src/clj" "src/cljs"]
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [ring-server "0.4.0"]
-                 [cljsjs/react-with-addons "0.13.1-0"]
-                 [reagent "0.5.0" :exclusions [cljsjs/react]]
-                 [reagent-forms "0.4.6"]
-                 [reagent-utils "0.1.4"]
                  [org.clojure/clojurescript "0.0-3126" :scope "provided"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 
+                 [reagent "0.5.1-SNAPSHOT" :exclusions [cljsjs/react]]
+                 [cljsjs/react-with-addons "0.13.1-0"]
+                 
+                 [ring-server "0.4.0"]
                  [ring "1.3.2"]
                  [ring/ring-defaults "0.1.4"]
                  [prone "0.8.1"]
                  [compojure "1.3.2"]
                  [selmer "0.8.2"]
-                 [environ "1.0.0"]]
+                 [environ "1.0.0"]
+
+                 ]
 
   :plugins [[lein-cljsbuild "1.0.4"]
             [lein-environ "1.0.0"]
@@ -48,19 +50,14 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
-  :profiles {:dev {:repl-options {:init-ns portman.repl
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-
-                   :dependencies [[ring-mock "0.1.5"]
+  :profiles {:dev {:dependencies [[ring-mock "0.1.5"]
                                   [ring/ring-devel "1.3.2"]
                                   [leiningen "2.5.1"]
                                   [figwheel "0.2.5"]
-                                  [weasel "0.6.0"]
-                                  [com.cemerick/piggieback "0.1.6-SNAPSHOT"]
                                   [pjstadig/humane-test-output "0.7.0"]]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]
+                   :plugins [[lein-figwheel "0.2.5"]
                              [com.cemerick/clojurescript.test "0.3.2"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
@@ -70,18 +67,19 @@
                               :server-port      3449
                               :css-dirs         ["resources/public/css"]
                               :ring-handler     portman.handler/app
+                              :nrepl-port       8912
                               }
 
                    :env {:dev? true}
 
                    :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
-                                              :compiler {:main "portman.dev"
-                                                         :source-map true}}
+                                              :compiler     {:main       "portman.dev"
+                                                             :source-map true}}
                                         :test {:source-paths ["src/cljs"  "test/cljs"]
-                                               :compiler {:output-to "target/test.js"
-                                                          :optimizations :whitespace
-                                                          :pretty-print true
-                                                          :preamble ["react/react.js"]}}}
+                                               :compiler     {:output-to     "target/test.js"
+                                                              :optimizations :whitespace
+                                                              :pretty-print  true
+                                                              :preamble      ["react/react.js"]}}}
                                :test-commands {"unit" ["phantomjs" :runner
                                                        "test/vendor/es5-shim.js"
                                                        "test/vendor/es5-sham.js"

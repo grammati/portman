@@ -3,6 +3,7 @@
             [cljsjs.react :as react]
             [clojure.string :as string]
             [portman.pi-table :as pi-table]
+            [portman.temp]
             [rally.animate :as animate]
             [rally.events :as events]
             [rally.layout :as layout]
@@ -72,6 +73,8 @@
      [:h4 "Portfolio Items"]
 
      [pi-table/app state]
+
+     ;;[portman.temp/app]
 
      ]]
    ])

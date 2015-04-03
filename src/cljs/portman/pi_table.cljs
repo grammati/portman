@@ -14,58 +14,53 @@
   (if-let [type (get item "_type")]
     (str "bg-" (-> type (.split "/") second (or "") .toLowerCase))))
 
-(def drag-handle-col
-  {:render   (fn [_] [:span.icon.icon-five-dots])
-   :td-class (fn [$item] (str "row-handle " (bg-class @$item)))})
 
-(def checkbox-col
-  {:render   (fn [$item] [:input {:type "checkbox"}])
-   :td-class "grid-controls"})
+;;; Table Cell definitions
 
-(def gear-menu-col
-  {:render   (fn [$item] [:span.icon.icon-gear])
-   :td-class "grid-controls"})
+(defn drag-handle [-item]
+  [:td {:class (str "row-handle " (bg-class @-item))}
+   [:span.icon.icon-five-dots]])
 
-(defn expandable [{:keys [render] :as col}]
-  (assoc col
-    :render (fn [$item]
-              (let [local-state (atom {:expanded? false})]
-                [:span {:style {:margin-left (* 10 (:_depth @$item 0))}}
-                 [:a {:on-click (fn [e]
-                                  (data/load-children! $item))
-                      :href     "javascript:;"}
-                  [:span.icon {:style {:margin "0 10"}
-                               :class (if (pos? (get (data/get-children @$item) "Count"))
-                                        (if (or (:children @$item) (:loading-children? @$item))
-                                          "icon-down-full"
-                                          "icon-right-full"))}]]
-                 [render $item]]))
-    :td-class (fn [$item]
-                (str ((:td-class col (constantly "")) $item) " expand"))))
+(defn checkbox [_]
+  [:td.grid-controls [:input {:type "checkbox"}]])
 
-(def formatted-id-col
-  {:header "ID"
-   :render (fn [$item]
-             [:a.id {:href (get @$item "_ref")}
-              [:span.icon.icon-portfolio.margin-right-half]
-              (get @$item "FormattedID")])})
+(defn gear-menu [_]
+  [:td.grid-contorls [:span.icon.icon-gear]])
+
+(defn formatted-id [-item]
+  [:a.id {:href (get @-item "_ref")}
+   [:span.icon.icon-portfolio.margin-right-half]
+   (get @-item "FormattedID")])
+
+(defn expandable-formatted-id [-item]
+  (let [item @-item]
+    [:td.expand
+     [:span {:style {:margin-left (* 10 (:_depth item 0))}}
+      [:a {:on-click (fn [e]
+                       (data/load-children! -item))
+           :href     "javascript:;"}
+       [:span.icon {:style {:margin "0 10"}
+                    :class (if (pos? (get (data/get-children item) "Count"))
+                             (if (or (:children item) (:loading-children? item))
+                               "icon-down-full"
+                               "icon-right-full"))}]]
+      [formatted-id -item]]]))
 
 
 (def pi-table-config
   (reagent/atom
    {:keyfn #(get % "FormattedID")
-    :cols  [
-            drag-handle-col
-            checkbox-col
-            gear-menu-col
-            (expandable formatted-id-col)
-            {:header "Name"
-             :render (fn [$item] (get @$item "Name"))}
+    :cells [drag-handle
+            checkbox
+            gear-menu
+            expandable-formatted-id
+            (fn [-item] [:td (get @-item "Name")])
             ;; {:header "Child Count"
             ;;  :render (fn [$item] (get (data/get-children @$item) "Count"))}
             ;; {:header "Leaf Story Count"
             ;;  :render (fn [$item] (get @$item "LeafStoryCount"))}
-            ]}))
+            ]
+    :headers [nil nil nil "ID" "Name"]}))
 
 
 (defn app [state]
@@ -80,7 +75,7 @@
           (swap! state assoc-in [:data] strategies))))
     :reagent-render
     (fn [state]
-      [:h1 "foo"]
+      ;;[:h1 "foo"]
       [table/table pi-table-config (reagent/cursor state [:data])]
       )}))
 
