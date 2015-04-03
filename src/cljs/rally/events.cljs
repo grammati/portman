@@ -28,6 +28,6 @@
         (try
           (handler payload)
           (catch :default e
-              (.log js/console "Exception in handler:" handler)))))
-    (recur)))
+            (.log js/console "Exception in handler:" handler))))
+      (recur))))
 

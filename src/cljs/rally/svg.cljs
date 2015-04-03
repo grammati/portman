@@ -38,8 +38,6 @@
 
 
 (defn pie [config-cur data]
-  (when-not (:depth @config-cur)
-    (.log js/console "pie" data))
   [:g
    (let [config      @config-cur
          [X Y]       (:center config)

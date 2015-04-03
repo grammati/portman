@@ -35,9 +35,9 @@
     :ring-widths [120 80 50 30 20]
     :full-angle  180
     :start-angle 0
-    :size-fn     #(get % "LeafStoryCount")
+    :size-fn     #(get % "LeafStoryCount" 1)
     :key-fn      #(get % "FormattedID")
-    :children-fn #(get % "Children")
+    :children-fn #(get % :children)
     }))
 
 (def child-pie-config
@@ -63,15 +63,17 @@
    (gen-test-data 5 4 0.8)))
 
 
-
 (defn app []
   [layout/container-fluid
    [layout/row
     [layout/col 4
-     #_[:svg {:width 350 :height 700} [svg/pie pie-config (reagent/cursor state [:data])]]]
+     [:svg {:width 350 :height 700} [svg/pie pie-config (reagent/cursor state [:data])]]]
     [layout/col 8
      [:h4 "Portfolio Items"]
-     [pi-table/app state]]]
+
+     [pi-table/app state]
+
+     ]]
    ])
 
 (defn mount-root []

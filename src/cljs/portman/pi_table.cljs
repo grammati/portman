@@ -82,9 +82,5 @@
     (fn [state]
       [:h1 "foo"]
       [table/table pi-table-config (reagent/cursor state [:data])]
-      #_[table/table
-       (reagent/atom {:cols [{:header "One"
-                              :render (fn [_] [:span "foo"])}]})
-       (reagent/atom [{} {} {}])]
       )}))
 

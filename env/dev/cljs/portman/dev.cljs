@@ -10,6 +10,14 @@
  :websocket-url   (str "wss://" js/location.host "/figwheel-ws")
  :jsload-callback core/mount-root)
 
-(weasel/connect (str "wss://" js/location.host "/weasel/") :verbose true)
+(defn repl-connect []
+  (weasel/connect (str "wss://" js/location.host "/weasel/") :verbose true))
+
+(defonce repl-check-timer
+  (.setInterval js/window
+                (fn []
+                  (when-not (weasel/alive?)
+                    (repl-connect)))
+                1000))
 
 (core/init!)
